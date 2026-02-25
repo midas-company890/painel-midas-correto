@@ -102,7 +102,8 @@ export const handler = async (event) => {
       statusCode: 500,
       headers: CORS_HEADERS,
       body: JSON.stringify({
-        error: "Erro ao carregar dados. Tente novamente em instantes.",
+        error: "Erro ao carregar dados.",
+        detail: err.message,
       }),
     };
   }

@@ -20,6 +20,11 @@
   to = "/.netlify/functions/clientes"
   status = 200
 
+[[redirects]]
+  from = "/api/health"
+  to = "/.netlify/functions/health"
+  status = 200
+
 # SPA fallback: qualquer rota não-arquivo → index.html
 [[redirects]]
   from = "/*"

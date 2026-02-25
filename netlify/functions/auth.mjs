@@ -12,6 +12,26 @@ const CONFIG = {
   spListName:   process.env.SP_LIST_NAME  || "Painel do Cliente",
 };
 
+/** Verifica se todas as variáveis de ambiente obrigatórias estão definidas */
+export function validateConfig() {
+  const missing = [];
+  if (!CONFIG.tenantId)     missing.push("AZURE_TENANT_ID");
+  if (!CONFIG.clientId)     missing.push("AZURE_CLIENT_ID");
+  if (!CONFIG.clientSecret) missing.push("AZURE_CLIENT_SECRET");
+  return {
+    ok: missing.length === 0,
+    missing,
+    configured: {
+      AZURE_TENANT_ID:     !!CONFIG.tenantId,
+      AZURE_CLIENT_ID:     !!CONFIG.clientId,
+      AZURE_CLIENT_SECRET: !!CONFIG.clientSecret,
+      SP_HOST:             CONFIG.spHost,
+      SP_SITE:             CONFIG.spSite,
+      SP_LIST_NAME:        CONFIG.spListName,
+    },
+  };
+}
+
 let tokenCache = { token: null, expiresAt: 0 };
 
 async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
@@ -45,6 +65,11 @@ async function withRetry(fn, label = "request", maxAttempts = 3) {
 }
 
 export async function getAccessToken() {
+  const check = validateConfig();
+  if (!check.ok) {
+    throw new Error(`Variáveis de ambiente faltando: ${check.missing.join(", ")}. Configure em Netlify > Site settings > Environment variables.`);
+  }
+
   const now = Date.now();
   if (tokenCache.token && tokenCache.expiresAt > now + 60000) {
     return tokenCache.token;
@@ -96,8 +121,8 @@ export async function getAccessToken() {
 }
 
 export async function getSharePointItems(accessToken) {
-  const listName = CONFIG.spListName;
-  const apiUrl = `https://${CONFIG.spHost}${CONFIG.spSite}/_api/web/lists/getbytitle('${listName}')/items?$top=1000&$orderby=Modified desc`;
+  const listName = encodeURIComponent(CONFIG.spListName);
+  const apiUrl = `https://${CONFIG.spHost}${CONFIG.spSite}/_api/web/lists/getbytitle('${listName}')/items?$top=1000&$orderby=Modified%20desc`;
 
   const resp = await withRetry(
     () =>
